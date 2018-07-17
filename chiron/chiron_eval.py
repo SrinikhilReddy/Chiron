@@ -278,6 +278,7 @@ def evaluation():
 
         val = defaultdict(dict)  # We could read vals out of order, that's why it's a dict
         for name in tqdm(file_list, desc="CTC decoding.",position = 2):
+            t_time = time.time()
             start_time = time.time()
             if not name.endswith('.signal'):
                 continue
@@ -350,6 +351,8 @@ def evaluation():
                             basecall_time, assembly_time]
             write_output(bpreads, c_bpread, list_of_time, file_pre, concise=FLAGS.concise, suffix=FLAGS.extension,
                          q_score=qs_string)
+            ctc_time = time.time()
+            print("------------name:",name,"  CTC Time:", ctc_time - t_time)
         writer.close()
 
 
