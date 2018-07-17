@@ -236,6 +236,7 @@ def evaluation():
         if not os.path.exists(os.path.join(FLAGS.output, 'meta')):
             os.makedirs(os.path.join(FLAGS.output, 'meta'))
         def worker_fn():
+            writer = tf.summary.FileWriter('/mnt/ssd/shared/srinikhil/graphs_rt', sess.graph)
             for name in tqdm(file_list,desc = "Logits inferencing.",position = 0):
                 if not name.endswith('.signal'):
                     continue
@@ -258,8 +259,16 @@ def evaluation():
                         logits_index:i,
                         logits_fname: name,
                     }
+                   # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                   # run_metadata = tf.RunMetadata()
+                   # sess.run(logits_enqueue,options=run_options,feed_dict=feed_dict,run_metadata=run_metadata)
+                   # writer.add_run_metadata(run_metadata, 'step%d' % i)
                     sess.run(logits_enqueue,feed_dict=feed_dict)
-            sess.run(logits_queue_close)
+            run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+            sess.run(logits_queue_close,options=run_options,feed_dict=feed_dict,run_metadata=run_metadata)
+            writer.add_run_metadata(run_metadata, 'step%d' % i)
+            writer.close()
         def run_listener(write_lock):
             # This function is used to solve the error when tqdm is used inside thread
             # https://github.com/tqdm/tqdm/issues/323
