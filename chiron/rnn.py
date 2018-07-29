@@ -44,7 +44,7 @@ def rnn_layers(x,
 
     cells_fw = list()
     cells_bw = list()
-    for i in range(layer_num):
+    for i in range(layer_num):                                   #Srinikhil:: Include new cell type: SRU here. 
         if cell == 'LSTM':
             cell_fw = LSTMCell(hidden_num)
             cell_bw = LSTMCell(hidden_num)
@@ -112,7 +112,7 @@ def rnn_layers_one_direction(x, seq_length, training, hidden_num=200, layer_num=
 
     cells = list()
     for i in range(layer_num):
-        cell = BNLSTMCell(hidden_num, training)
+        cell = BNLSTMCell(hidden_num, training)    # Should replace BNLSTM with SRU LSTM cell with the same parameters.
         cells.append(cell)
     cell_wrap = tf.contrib.rnn.MultiRNNCell(cells)
     with tf.variable_scope('LSTM_rnn') as scope:
