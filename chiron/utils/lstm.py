@@ -7,7 +7,37 @@ import tensorflow as tf
 from tensorflow.contrib.rnn.python.ops.core_rnn_cell import RNNCell
 
 class SRU(RNNCell):
+    def __init__(self, num_units):
+        self.num_units = num_units
 
+    @property
+    def state_size(self):
+        return (self.num_units, self.num_units)
+
+    @property
+    def output_size(self):
+        return self.num_units
+
+    def __call__(self, x, state, scope=None):
+        with tf.variable_scope(scope or type(self).__name__):
+            c, h = state
+            # Keep W_xh and W_hh separate here as well to reuse initialization methods
+            x_size = x.get_shape().as_list()[1]
+            
+            W = tf.get_variable('W',[x_size,self.num_units],initializer=orthogonal_initializer())
+            W_f = tf.get_variable('W_f',[x_size,self.num_units],initializer=orthogonal_initializer())
+            W_r = tf.get_variable('W_r',[x_size,self.num_units],initializer=orthogonal_initializer())
+            
+            bias_f = tf.get_variable('bias', [1 * x_size])
+            bias_r = tf.get_variable('bias', [1 * x_size])
+            
+            ft = tf.matmul(W_f,x) + bias_f
+            rt = tf.matmul(W_r,x) + bias_r
+            xt = tf.matmul(W,x)
+            
+            new_c = c * tf.sigmoid(ft) + (1-tf.sigmoid(ft)) * xt
+            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1-tf.sigmoid(rt)) * x
+            return new_h, (new_c, new_h)
 
 class LSTMCell(RNNCell):
     '''Vanilla LSTM implemented with same initializations as BN-LSTM'''
@@ -30,11 +60,11 @@ class LSTMCell(RNNCell):
             # Keep W_xh and W_hh separate here as well to reuse initialization methods
             x_size = x.get_shape().as_list()[1]
             W_xh = tf.get_variable('W_xh',
-                                   [x_size, 4 * self.num_units],
-                                   initializer=orthogonal_initializer())
+                    [x_size, 4 * self.num_units],
+                    initializer=orthogonal_initializer())
             W_hh = tf.get_variable('W_hh',
-                                   [self.num_units, 4 * self.num_units],
-                                   initializer=bn_lstm_identity_initializer(0.95))
+                    [self.num_units, 4 * self.num_units],
+                    initializer=bn_lstm_identity_initializer(0.95))
             bias = tf.get_variable('bias', [4 * self.num_units])
 
             # hidden = tf.matmul(x, W_xh) + tf.matmul(h, W_hh) + bias
@@ -72,11 +102,11 @@ class BNLSTMCell(RNNCell):
 
             x_size = x.get_shape().as_list()[1]
             W_xh = tf.get_variable('W_xh',
-                                   [x_size, 4 * self.num_units],
-                                   initializer=orthogonal_initializer())
+                    [x_size, 4 * self.num_units],
+                    initializer=orthogonal_initializer())
             W_hh = tf.get_variable('W_hh',
-                                   [self.num_units, 4 * self.num_units],
-                                   initializer=bn_lstm_identity_initializer(0.95))
+                    [self.num_units, 4 * self.num_units],
+                    initializer=bn_lstm_identity_initializer(0.95))
             bias = tf.get_variable('bias', [4 * self.num_units])
 
             xh = tf.matmul(x, W_xh)
