@@ -39,11 +39,13 @@ def extract(raw_folder=None):
     writer = tf.python_io.TFRecordWriter(tfrecords_filename)
 
     for file_n in tf.gfile.ListDirectory(root_folder):
+        print("HETERERE")
         if file_n.endswith('fast5'):
             output_file = output_folder + os.path.splitext(file_n)[0]
             success, (raw_data, raw_data_array) = extract_file(
                 root_folder + os.path.sep + file_n)
             if success:
+                print("HERE222")
                 count += 1
                 example = tf.train.Example(features=tf.train.Features(feature={
                     'raw_data': _bytes_feature(raw_data.tostring()),
@@ -66,6 +68,7 @@ def extract_file(input_file):
         return False, (None, None)
 
     raw_data_array = []
+    print("HERE111")
     for index, start in enumerate(raw_start):
         if raw_length[index]==0:
             print("input_file:" + input_file)

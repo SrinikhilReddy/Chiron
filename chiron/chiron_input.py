@@ -433,13 +433,13 @@ def read_raw_data_sets(data_dir, h5py_file_path=None, seq_length=300, k_mer=1, m
 
                 if len(f_signal) == 0:
                     continue
-                try:
-                    f_label = read_label(data_dir + file_pre + '.label',
+                #try:
+                f_label = read_label(data_dir + file_pre + '.label',
                                          skip_start=10,
                                          window_n=int((k_mer - 1) / 2))
-                except:
-                    sys.stdout.write("Read the label %s fail.Skipped." % (name))
-                    continue
+                #except:
+                #    sys.stdout.write("Read the label %s fail.Skipped." % (name))
+                #    continue
 
                 tmp_event, tmp_event_length, tmp_label, tmp_label_length = \
                     read_raw(f_signal, f_label, seq_length)
@@ -501,6 +501,7 @@ def read_signal_tfrecord(data_array, normalize="median"):
 
 
 def read_label(file_path, skip_start=10, window_n=0):
+    print("----------------------",file_path);
     f_h = open(file_path, 'r')
     start = list()
     length = list()
@@ -512,7 +513,7 @@ def read_label(file_path, skip_start=10, window_n=0):
         print ('line', line)
         record = line.split()
         print ('record', record)
-        exit()
+        #exit()
         all_base.append(base2ind(record[2]))
     f_h.seek(0, 0)  # Back to the start
     file_len = len(all_base)

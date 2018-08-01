@@ -69,7 +69,7 @@ def train():
     summary_writer = tf.summary.FileWriter(
         FLAGS.log_dir + FLAGS.model_name + '/summary/', sess.graph)
     model.save_model(default_config,config)
-    train_ds = read_tfrecord(FLAGS.data_dir, FLAGS.tfrecord, FLAGS.cache_file,
+    train_ds = read_raw_data_sets(FLAGS.data_dir, FLAGS.cache_file,
                              FLAGS.sequence_len, k_mer=FLAGS.k_mer,max_segments_num=FLAGS.segments_num)
     start = time.time()
     for i in range(FLAGS.max_steps):
