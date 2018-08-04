@@ -292,12 +292,12 @@ def Res_x(net,training,layer_num = 10):
 def DNA_model1(net,training):
     #   Residual Layer x 3 (DNA_default)
     with tf.variable_scope('res_layer1'):
-        net = residual_layer(net, out_channel=256,
+        net = residual_layer(net, out_channel=200,
                               training=training, i_bn=True)
     with tf.variable_scope('res_layer2'):
-        net = residual_layer(net, out_channel=256, training=training)
+        net = residual_layer(net, out_channel=200, training=training)
     with tf.variable_scope('res_layer3'):
-        net = residual_layer(net, out_channel=256, training=training)
+        net = residual_layer(net, out_channel=200, training=training)
     return net
 
 def RNA_model1(net,training):
