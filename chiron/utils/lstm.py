@@ -5,6 +5,9 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.rnn.python.ops.core_rnn_cell import RNNCell
+from tensorflow.contrib.rnn import LSTMStateTuple
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import array_ops
 
 class SRU(RNNCell):
     def __init__(self, num_units):
@@ -18,26 +21,103 @@ class SRU(RNNCell):
     def output_size(self):
         return self.num_units
 
+    def __call__(self, inputs, state, scope=None):
+        with tf.variable_scope(scope or type(self).__name__):  # "SRUCell"
+            with tf.variable_scope("Inputs"):
+                x = linear([inputs], self._num_units, False)
+            with tf.variable_scope("Gate"):
+                concat = tf.sigmoid(
+                    linear([inputs], 2 * self._num_units, True))
+                if tf.__version__ == "0.12.1":
+                    f, r = tf.split(1, 2, concat)
+                else:
+                    f, r = tf.split(axis=1, num_or_size_splits=2, value=concat)
+
+            c = f * state + (1 - f) * x
+
+            # highway connection
+            h = r * self._activation(c) + (1 - r) * inputs
+
+        return h, c
+def linear(args, output_size, bias, bias_start=0.0, scope=None):
+    """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
+    Args:
+      args: a 2D Tensor or a list of 2D, batch x n, Tensors.
+      output_size: int, second dimension of W[i].
+      bias: boolean, whether to add a bias term or not.
+      bias_start: starting value to initialize the bias; 0 by default.
+      scope: VariableScope for the created subgraph; defaults to "Linear".
+
+    Returns:
+      A 2D Tensor with shape [batch x output_size] equal to
+      sum_i(args[i] * W[i]), where W[i]s are newly created matrices.
+
+    Raises:
+      ValueError: if some of the arguments has unspecified or wrong shape.
+    """
+    if args is None or (isinstance(args, (list, tuple)) and not args):
+        raise ValueError("`args` must be specified")
+    if not isinstance(args, (list, tuple)):
+        args = [args]
+
+    # Calculate the total size of arguments on dimension 1.
+    total_arg_size = 0
+    shapes = [a.get_shape().as_list() for a in args]
+    for shape in shapes:
+        if len(shape) != 2:
+            raise ValueError(
+                "Linear is expecting 2D arguments: %s" % str(shapes))
+        if not shape[1]:
+            raise ValueError(
+                "Linear expects shape[1] of arguments: %s" % str(shapes))
+        else:
+            total_arg_size += shape[1]
+
+    # Now the computation.
+    with tf.variable_scope(scope or "Linear"):
+        matrix = tf.get_variable("Matrix", [total_arg_size, output_size])
+        if len(args) == 1:
+            res = tf.matmul(args[0], matrix)
+        else:
+            res = tf.matmul(tf.concat(1, args), matrix)
+        if not bias:
+            return res
+        bias_term = tf.get_variable(
+            "Bias", [output_size],
+            initializer=tf.constant_initializer(bias_start))
+    return res + bias_term
+
+class BNSRU(RNNCell):
+    def __init__(self, num_units):
+        self.num_units = num_units
+
+    @property
+    def state_size(self):
+        return (self.num_units, self.num_units)
+
+    @property
+    def output_size(self):
+        return self.num_units
+
     def __call__(self, x, state, scope=None):
-        print("In SRU cell \n \n")
         with tf.variable_scope(scope or type(self).__name__):
             c, h = state
             # Keep W_xh and W_hh separate here as well to reuse initialization methods
             x_size = x.get_shape().as_list()[1]
-            
-            W = tf.get_variable('W',[x_size,self.num_units],initializer=orthogonal_initializer())
-            W_f = tf.get_variable('W_f',[x_size,self.num_units],initializer=orthogonal_initializer())
-            W_r = tf.get_variable('W_r',[x_size,self.num_units],initializer=orthogonal_initializer())
-            
-            bias_f = tf.get_variable('bias_f', [1 * self.num_units])
-            bias_r = tf.get_variable('bias_r', [1 * self.num_units])
-            
-            ft = tf.matmul(x,W_f) + bias_f
-            rt = tf.matmul(x,W_r) + bias_r
-            xt = tf.matmul(x,W)
-            
-            new_c = c * tf.sigmoid(ft) + (1-tf.sigmoid(ft)) * xt
-            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1-tf.sigmoid(rt)) * x
+
+            W = tf.get_variable('W', [x_size, self.num_units], initializer=orthogonal_initializer())
+            W_f = tf.get_variable('W_f', [x_size, self.num_units], initializer=orthogonal_initializer())
+            W_r = tf.get_variable('W_r', [x_size, self.num_units], initializer=orthogonal_initializer())
+
+            bias_f = tf.get_variable('bias', [1 * x_size])
+            bias_r = tf.get_variable('bias', [1 * x_size])
+
+            ft = batch_norm(tf.matmul(W_f, x)) + bias_f
+            rt = batch_norm(tf.matmul(W_r, x)) + bias_r
+            xt = batch_norm(tf.matmul(W, x))
+
+            new_c = c * tf.sigmoid(ft) + (1 - tf.sigmoid(ft)) * xt
+            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1 - tf.sigmoid(rt)) * x
             return new_h, (new_c, new_h)
 
 class LSTMCell(RNNCell):
