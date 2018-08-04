@@ -36,7 +36,7 @@ class SRU(RNNCell):
             c = f * state + (1 - f) * x
 
             # highway connection
-            h = r * self._activation(c) + (1 - r) * inputs
+            h = r * tf.tanh(c) + (1 - r) * inputs
 
         return h, c
 def linear(args, output_size, bias, bias_start=0.0, scope=None):
