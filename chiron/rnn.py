@@ -15,7 +15,7 @@ from tensorflow.contrib.rnn import LSTMCell
 from tensorflow.contrib.rnn import GRUCell
 from tensorflow.contrib.rnn.python.ops.rnn import stack_bidirectional_dynamic_rnn
 from chiron.utils.lstm import BNLSTMCell
-from chiron.utils.lstm import SRU
+from chiron.utils.sru import SRUCell
 from chiron.utils.variable import _variable_on_cpu
 
 def rnn_layers(x, 
@@ -50,8 +50,8 @@ def rnn_layers(x,
             cell_fw = LSTMCell(hidden_num)
             cell_bw = LSTMCell(hidden_num)
         elif cell == 'SRU':
-            cell_fw = SRU(hidden_num)
-            cell_bw = SRU(hidden_num)
+            cell_fw = SRUCell(hidden_num)
+            cell_bw = SRUCell(hidden_num)
         elif cell == 'GRU':
             cell_fw = GRUCell(hidden_num)
             cell_bw = GRUCell(hidden_num)
