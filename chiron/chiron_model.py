@@ -31,6 +31,7 @@ def save_model(config_path,configure):
     return None
 
 def read_config(config_file):
+    print("-----------------------------",config_file)
     if config_file is not None:
         config = json.load(open(config_file))
     else:

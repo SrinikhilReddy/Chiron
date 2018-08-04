@@ -41,6 +41,7 @@ def train():
     y_shape = tf.placeholder(tf.int64)
     y = tf.SparseTensor(y_indexs, y_values, y_shape)
     default_config = os.path.join(FLAGS.log_dir,FLAGS.model_name,'model.json')
+    print("COMING HERERERERERERERERERERE  \n \n \n")
     if FLAGS.retrain:
         if os.path.isfile(default_config):
             config_file = default_config

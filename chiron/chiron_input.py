@@ -501,7 +501,6 @@ def read_signal_tfrecord(data_array, normalize="median"):
 
 
 def read_label(file_path, skip_start=10, window_n=0):
-    print("----------------------",file_path);
     f_h = open(file_path, 'r')
     start = list()
     length = list()
@@ -510,9 +509,7 @@ def read_label(file_path, skip_start=10, window_n=0):
     if skip_start < window_n:
         skip_start = window_n
     for line in f_h:
-        print ('line', line)
         record = line.split()
-        print ('record', record)
         #exit()
         all_base.append(base2ind(record[2]))
     f_h.seek(0, 0)  # Back to the start

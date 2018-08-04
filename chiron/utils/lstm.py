@@ -19,6 +19,7 @@ class SRU(RNNCell):
         return self.num_units
 
     def __call__(self, x, state, scope=None):
+        print("In SRU cell \n \n")
         with tf.variable_scope(scope or type(self).__name__):
             c, h = state
             # Keep W_xh and W_hh separate here as well to reuse initialization methods
@@ -28,12 +29,12 @@ class SRU(RNNCell):
             W_f = tf.get_variable('W_f',[x_size,self.num_units],initializer=orthogonal_initializer())
             W_r = tf.get_variable('W_r',[x_size,self.num_units],initializer=orthogonal_initializer())
             
-            bias_f = tf.get_variable('bias', [1 * x_size])
-            bias_r = tf.get_variable('bias', [1 * x_size])
+            bias_f = tf.get_variable('bias_f', [1 * self.num_units])
+            bias_r = tf.get_variable('bias_r', [1 * self.num_units])
             
-            ft = tf.matmul(W_f,x) + bias_f
-            rt = tf.matmul(W_r,x) + bias_r
-            xt = tf.matmul(W,x)
+            ft = tf.matmul(x,W_f) + bias_f
+            rt = tf.matmul(x,W_r) + bias_r
+            xt = tf.matmul(x,W)
             
             new_c = c * tf.sigmoid(ft) + (1-tf.sigmoid(ft)) * xt
             new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1-tf.sigmoid(rt)) * x
