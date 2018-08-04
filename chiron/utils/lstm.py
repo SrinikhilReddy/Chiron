@@ -24,10 +24,10 @@ class SRU(RNNCell):
     def __call__(self, inputs, state, scope=None):
         with tf.variable_scope(scope or type(self).__name__):  # "SRUCell"
             with tf.variable_scope("Inputs"):
-                x = linear([inputs], self._num_units, False)
+                x = linear([inputs], self.num_units, False)
             with tf.variable_scope("Gate"):
                 concat = tf.sigmoid(
-                    linear([inputs], 2 * self._num_units, True))
+                    linear([inputs], 2 * self.num_units, True))
                 if tf.__version__ == "0.12.1":
                     f, r = tf.split(1, 2, concat)
                 else:
