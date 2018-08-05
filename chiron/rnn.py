@@ -56,7 +56,6 @@ def rnn_layers(x,
             cell_fw = GRUCell(hidden_num)
             cell_bw = GRUCell(hidden_num)
         elif cell == 'BNLSTM':
-            print("HEHEHEHEHEHEHEH")
             cell_fw = BNLSTMCell(hidden_num,training = training)
             cell_bw = BNLSTMCell(hidden_num,training = training)
         else:
