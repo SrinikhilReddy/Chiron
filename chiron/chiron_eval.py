@@ -218,7 +218,7 @@ def evaluation():
     decode_predict_op, decode_prob_op, decoded_fname_op, decode_idx_op, decode_queue_size = decoding_queue(logits_queue)
     saver = tf.train.Saver()
     with tf.train.MonitoredSession(session_creator=tf.train.ChiefSessionCreator(config=config)) as sess:
-        writer = tf.summary.FileWriter('/mnt/ssd/shared/srinikhil/graphs_rt', sess.graph)
+        writer = tf.summary.FileWriter('/mnt/ssd/shared/srinikhil/graphs_rt' + FLAGS.model.split("/")[-1], sess.graph)
         run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         run_metadata = tf.RunMetadata()
 
@@ -239,10 +239,8 @@ def evaluation():
             os.makedirs(os.path.join(FLAGS.output, 'result'))
         if not os.path.exists(os.path.join(FLAGS.output, 'meta')):
             os.makedirs(os.path.join(FLAGS.output, 'meta'))
-        print("=============================TEST12")
         def worker_fn():
             for name in tqdm(file_list,desc = "Logits inferencing.",position = 0):
-                print("Name",name," Enter")
                 if not name.endswith('.signal'):
                     continue
                 input_path = os.path.join(file_dir, name)
@@ -251,7 +249,6 @@ def evaluation():
                                                step=FLAGS.jump)
                 reads_n = eval_data.reads_n
                 for i in trange(0, reads_n, FLAGS.batch_size,desc = "Logits inferencing",position = 1):
-                    print(i,"Enter")
                     batch_x, seq_len, _ = eval_data.next_batch(
                         FLAGS.batch_size, shuffle=False, sig_norm=False)
                     batch_x = np.pad(
@@ -267,8 +264,6 @@ def evaluation():
                     }
                     sess.run(logits_enqueue,feed_dict=feed_dict,options=run_options,run_metadata=run_metadata)
                     writer.add_run_metadata(run_metadata, 'File%sstep%d' % (name, i))
-                    print(i,"Exit")
-                print("Name",name," Exit")
             sess.run(logits_queue_close,options=run_options,run_metadata=run_metadata)
             writer.add_run_metadata(run_metadata,'Logits_closing')
         def run_listener(write_lock):

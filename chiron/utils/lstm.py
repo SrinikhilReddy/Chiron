@@ -88,8 +88,9 @@ def linear(args, output_size, bias, bias_start=0.0, scope=None):
     return res + bias_term
 
 class BNSRU(RNNCell):
-    def __init__(self, num_units):
+    def __init__(self, num_units,training):
         self.num_units = num_units
+        self.training = training
 
     @property
     def state_size(self):
@@ -109,12 +110,12 @@ class BNSRU(RNNCell):
             W_f = tf.get_variable('W_f', [x_size, self.num_units], initializer=orthogonal_initializer())
             W_r = tf.get_variable('W_r', [x_size, self.num_units], initializer=orthogonal_initializer())
 
-            bias_f = tf.get_variable('bias', [1 * x_size])
-            bias_r = tf.get_variable('bias', [1 * x_size])
+            bias_f = tf.get_variable('bias_f', [1 * self.num_units])
+            bias_r = tf.get_variable('bias_r', [1 * self.num_units])
 
-            ft = batch_norm(tf.matmul(W_f, x)) + bias_f
-            rt = batch_norm(tf.matmul(W_r, x)) + bias_r
-            xt = batch_norm(tf.matmul(W, x))
+            ft = batch_norm(tf.matmul(x,W_f),'ft',self.training) + bias_f
+            rt = batch_norm(tf.matmul(x,W_r),'rt',self.training) + bias_r
+            xt = batch_norm(tf.matmul(x,W),'xt',self.training)
 
             new_c = c * tf.sigmoid(ft) + (1 - tf.sigmoid(ft)) * xt
             new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1 - tf.sigmoid(rt)) * x
