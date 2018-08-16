@@ -16,7 +16,7 @@ from tensorflow.contrib.rnn import GRUCell
 from tensorflow.contrib.rnn.python.ops.rnn import stack_bidirectional_dynamic_rnn
 from chiron.utils.lstm import BNLSTMCell
 from chiron.utils.lstm import BNSRU
-from chiron.utils.sru import SRUCell
+from chiron.utils.lstm import SRUCell
 from chiron.utils.variable import _variable_on_cpu
 
 def rnn_layers(x, 

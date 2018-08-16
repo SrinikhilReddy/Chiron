@@ -218,7 +218,7 @@ def evaluation():
     decode_predict_op, decode_prob_op, decoded_fname_op, decode_idx_op, decode_queue_size = decoding_queue(logits_queue)
     saver = tf.train.Saver()
     with tf.train.MonitoredSession(session_creator=tf.train.ChiefSessionCreator(config=config)) as sess:
-        writer = tf.summary.FileWriter('/mnt/ssd/shared/srinikhil/graphs_rt' + FLAGS.model.split("/")[-1], sess.graph)
+        #writer = tf.summary.FileWriter('/mnt/ssd/shared/srinikhil/graphs_rt' + FLAGS.model.split("/")[-1], sess.graph)
         run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
         run_metadata = tf.RunMetadata()
 
@@ -263,9 +263,9 @@ def evaluation():
                         logits_fname: name,
                     }
                     sess.run(logits_enqueue,feed_dict=feed_dict,options=run_options,run_metadata=run_metadata)
-                    writer.add_run_metadata(run_metadata, 'File%sstep%d' % (name, i))
+                    #writer.add_run_metadata(run_metadata, 'File%sstep%d' % (name, i))
             sess.run(logits_queue_close,options=run_options,run_metadata=run_metadata)
-            writer.add_run_metadata(run_metadata,'Logits_closing')
+            #writer.add_run_metadata(run_metadata,'Logits_closing')
         def run_listener(write_lock):
             # This function is used to solve the error when tqdm is used inside thread
             # https://github.com/tqdm/tqdm/issues/323
@@ -305,7 +305,7 @@ def evaluation():
                     pbar.set_postfix(logits_q=l_sz, decoded_q=d_sz, refresh=False)
                     decode_ops = [decoded_fname_op, decode_idx_op, decode_predict_op, decode_prob_op]
                     decoded_fname, i, predict_val, logits_prob = sess.run(decode_ops, feed_dict={training: False},options=run_options,run_metadata=run_metadata)
-                    writer.add_run_metadata(run_metadata, 'CTC:File%sstep%d' % (name, K))
+                    #writer.add_run_metadata(run_metadata, 'CTC:File%sstep%d' % (name, K))
                     decoded_fname = decoded_fname.decode("UTF-8")
                     val[decoded_fname][i] = (predict_val, logits_prob)
                     K = K+1
@@ -353,7 +353,7 @@ def evaluation():
                          q_score=qs_string)
             ctc_time = time.time()
             print("------------name:",name,"  CTC Time:", ctc_time - t_time)
-        writer.close()
+        #writer.close()
 
 
 def decoding_queue(logits_queue, num_threads=6):

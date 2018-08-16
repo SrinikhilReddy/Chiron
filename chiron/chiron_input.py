@@ -433,13 +433,13 @@ def read_raw_data_sets(data_dir, h5py_file_path=None, seq_length=300, k_mer=1, m
 
                 if len(f_signal) == 0:
                     continue
-                #try:
-                f_label = read_label(data_dir + file_pre + '.label',
+                try:
+                    f_label = read_label(data_dir + file_pre + '.label',
                                          skip_start=10,
                                          window_n=int((k_mer - 1) / 2))
-                #except:
-                #    sys.stdout.write("Read the label %s fail.Skipped." % (name))
-                #    continue
+                except:
+                    sys.stdout.write("Read the label %s fail.Skipped." % (name))
+                    continue
 
                 tmp_event, tmp_event_length, tmp_label, tmp_label_length = \
                     read_raw(f_signal, f_label, seq_length)

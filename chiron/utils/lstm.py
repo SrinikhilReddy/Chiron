@@ -9,7 +9,7 @@ from tensorflow.contrib.rnn import LSTMStateTuple
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import array_ops
 
-class SRU(RNNCell):
+class SRUCell(RNNCell):
     def __init__(self, num_units):
         self.num_units = num_units
 
@@ -21,71 +21,29 @@ class SRU(RNNCell):
     def output_size(self):
         return self.num_units
 
-    def __call__(self, inputs, state, scope=None):
-        with tf.variable_scope(scope or type(self).__name__):  # "SRUCell"
-            with tf.variable_scope("Inputs"):
-                x = linear([inputs], self.num_units, False)
-            with tf.variable_scope("Gate"):
-                concat = tf.sigmoid(
-                    linear([inputs], 2 * self.num_units, True))
-                if tf.__version__ == "0.12.1":
-                    f, r = tf.split(1, 2, concat)
-                else:
-                    f, r = tf.split(axis=1, num_or_size_splits=2, value=concat)
+    def __call__(self,x ,state, scope=None):
+        with tf.variable_scope(scope or type(self).__name__):
+            #c, h = state
+                                # Keep W_xh and W_hh separate here as well to reuse initialization methods
+            x_size = x.get_shape().as_list()[1]
 
-            c = f * state + (1 - f) * x
+            W = tf.get_variable('W', [ 3 * x_size,3 * self.num_units], initializer=orthogonal_initializer())
+            #W_f = tf.get_variable('W_f', [x_size, self.num_units], initializer=orthogonal_initializer())
+            #W_r = tf.get_variable('W_r', [x_size, self.num_units], initializer=orthogonal_initializer())
 
-            # highway connection
-            h = r * tf.tanh(c) + (1 - r) * inputs
+            bias_f = tf.get_variable('bias_f', [3 * self.num_units])
+            #bias_r = tf.get_variable('bias_r', [1 * self.num_units])
+            
 
-        return h, c
-def linear(args, output_size, bias, bias_start=0.0, scope=None):
-    """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
-    Args:
-      args: a 2D Tensor or a list of 2D, batch x n, Tensors.
-      output_size: int, second dimension of W[i].
-      bias: boolean, whether to add a bias term or not.
-      bias_start: starting value to initialize the bias; 0 by default.
-      scope: VariableScope for the created subgraph; defaults to "Linear".
+            concat = tf.concat(axis=1, values=[x,x,x])
+            
+            ft,rt,xt = tf.split(axis=1, num_or_size_splits=3, value=(tf.matmul(concat,W)+bias_f))
 
-    Returns:
-      A 2D Tensor with shape [batch x output_size] equal to
-      sum_i(args[i] * W[i]), where W[i]s are newly created matrices.
-
-    Raises:
-      ValueError: if some of the arguments has unspecified or wrong shape.
-    """
-    if args is None or (isinstance(args, (list, tuple)) and not args):
-        raise ValueError("`args` must be specified")
-    if not isinstance(args, (list, tuple)):
-        args = [args]
-
-    # Calculate the total size of arguments on dimension 1.
-    total_arg_size = 0
-    shapes = [a.get_shape().as_list() for a in args]
-    for shape in shapes:
-        if len(shape) != 2:
-            raise ValueError(
-                "Linear is expecting 2D arguments: %s" % str(shapes))
-        if not shape[1]:
-            raise ValueError(
-                "Linear expects shape[1] of arguments: %s" % str(shapes))
-        else:
-            total_arg_size += shape[1]
-
-    # Now the computation.
-    with tf.variable_scope(scope or "Linear"):
-        matrix = tf.get_variable("Matrix", [total_arg_size, output_size])
-        if len(args) == 1:
-            res = tf.matmul(args[0], matrix)
-        else:
-            res = tf.matmul(tf.concat(1, args), matrix)
-        if not bias:
-            return res
-        bias_term = tf.get_variable(
-            "Bias", [output_size],
-            initializer=tf.constant_initializer(bias_start))
-    return res + bias_term
+            c, h = state
+            new_c = c * tf.sigmoid(ft) + (1 - tf.sigmoid(ft)) * xt
+            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1 - tf.sigmoid(rt)) * x
+            
+            return new_h, (new_c, new_h)
 
 class BNSRU(RNNCell):
     def __init__(self, num_units,training):
