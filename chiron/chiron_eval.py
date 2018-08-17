@@ -277,7 +277,7 @@ def evaluation():
         worker.start()
 
         val = defaultdict(dict)  # We could read vals out of order, that's why it's a dict
-        for name in tqdm(file_list, desc="CTC decoding.",position = 2):
+        for name in file_list:
             t_time = time.time()
             start_time = time.time()
             if not name.endswith('.signal'):
@@ -298,27 +298,25 @@ def evaluation():
             reads = list()
 
             N = len(range(0, reads_n, FLAGS.batch_size))
-            with tqdm(total=reads_n, desc="ctc decoding",position = 3) as pbar:
-                K = 0
-                while True:
-                    l_sz, d_sz = sess.run([logits_queue_size, decode_queue_size],options=run_options,run_metadata=run_metadata)
-                    pbar.set_postfix(logits_q=l_sz, decoded_q=d_sz, refresh=False)
-                    decode_ops = [decoded_fname_op, decode_idx_op, decode_predict_op, decode_prob_op]
-                    decoded_fname, i, predict_val, logits_prob = sess.run(decode_ops, feed_dict={training: False},options=run_options,run_metadata=run_metadata)
-                    #writer.add_run_metadata(run_metadata, 'CTC:File%sstep%d' % (name, K))
-                    decoded_fname = decoded_fname.decode("UTF-8")
-                    val[decoded_fname][i] = (predict_val, logits_prob)
-                    K = K+1
-                    if decoded_fname == name:
-                        decoded_cnt = len(val[name])
-                        pbar.update(min(reads_n, decoded_cnt*FLAGS.batch_size) - (decoded_cnt -1) * FLAGS.batch_size)
-                        if decoded_cnt == N:
-                            break
+            #print(" ----------name:",name)
+            while True:
+                #print("-------name",name," in while loop")
+                l_sz, d_sz = sess.run([logits_queue_size, decode_queue_size],options=run_options)
+                decode_ops = [decoded_fname_op, decode_idx_op, decode_predict_op, decode_prob_op]
+                decoded_fname, i, predict_val, logits_prob = sess.run(decode_ops, feed_dict={training: False},options=run_options)
+                #writer.add_run_metadata(run_metadata, 'CTC:File%sstep%d' % (name, K))
+                decoded_fname = decoded_fname.decode("UTF-8")
+                val[decoded_fname][i] = (predict_val, logits_prob)
+                if decoded_fname == name:
+                    decoded_cnt = len(val[name])
+                    if decoded_cnt == N:
+                        #print("We are HEHEHEHEHE")
+                        break
 
 
             qs_list = np.empty((0, 1), dtype=np.float)
             qs_string = None
-            for i in trange(0, reads_n, FLAGS.batch_size, desc="Output",position = 4):
+            for i in range(0, reads_n, FLAGS.batch_size):
                 predict_val, logits_prob = val[name][i]
                 predict_read, unique = sparse2dense(predict_val)
                 predict_read = predict_read[0]
@@ -351,8 +349,8 @@ def evaluation():
                             basecall_time, assembly_time]
             write_output(bpreads, c_bpread, list_of_time, file_pre, concise=FLAGS.concise, suffix=FLAGS.extension,
                          q_score=qs_string)
-            ctc_time = time.time()
-            print("------------name:",name,"  CTC Time:", ctc_time - t_time)
+            #ctc_time = time.time()
+            print("------------name:",name)#"  CTC Time:", ctc_time - t_time)
         #writer.close()
 
 

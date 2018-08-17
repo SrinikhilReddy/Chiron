@@ -41,7 +41,7 @@ class SRUCell(RNNCell):
 
             c, h = state
             new_c = c * tf.sigmoid(ft) + (1 - tf.sigmoid(ft)) * xt
-            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1 - tf.sigmoid(rt)) * x
+            new_h = tf.sigmoid(rt) * tf.tanh(new_c) + (1 - tf.sigmoid(rt)) * xt
             
             return new_h, (new_c, new_h)
 
